@@ -35,21 +35,23 @@ const getKeyValueDefinitions = record => {
 const execMultipleBatch = async (records, batchSize, done) => {
   const promises = new Array();
   
-  while(records.length !== batchSize) {
+  records.forEach(record => {
+
     const keysList = getKeyValueDefinitions(record);
     const keysString = keysList.join('/');
     const image = aws.DynamoDB.Converter.output({ M: record.dynamodb.NewImage });
-
+    
     const params = {
       Bucket: process.env.BUCKET,
       Key: `${process.env.PREFIX}/${process.env.TABLE}/${keysString}/image.json`,
       Body: JSON.stringify(image),
     }
-
+    
     console.log(`${keysString} snapshot pushed`);
+    
+    promises.push(s3.putObject(params, record));
 
-    promises.push(s3.putObject(params, record))
-  }
+  });
 
   return Promise.all(promises);
 };
