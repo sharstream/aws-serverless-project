@@ -13,7 +13,7 @@ module.exports.backup = async (event, context, callback) => {
   if(!process.env.TABLE) throw new Error('Dynamo Table environment is required');
 
   try {
-    const res = await execMultipleBatch(records, 10)
+    const res = await execMultipleBatches(records, 10)
     if(res) return res;
   } catch (err) {
     console.error('Error', err);
@@ -32,7 +32,7 @@ const getKeyValueDefinitions = record => {
   return keysValueDefinitions;
 };
 
-const execMultipleBatch = async (records, batchSize, done) => {
+const execMultipleBatches = async (records, batchSize, done) => {
   const promises = new Array();
   
   records.forEach(record => {
