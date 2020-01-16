@@ -1,0 +1,5 @@
+/node_modules/**
+/coverages/**
+SD_Store
+/.serverless/**
+/.vscode

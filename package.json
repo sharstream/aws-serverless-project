@@ -1,0 +1,28 @@
+{
+  "name": "aws-serverless-project",
+  "version": "0.0.1",
+  "description": "Aws project reference for entry-level serverless framework use cases",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --config /src/config/unit/jest.js",
+    "local": "sls offline start -s dev --provideRuntime"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sharstream/aws-serverless-project.git"
+  },
+  "author": "David Perez",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sharstream/aws-serverless-project/issues"
+  },
+  "homepage": "https://github.com/sharstream/aws-serverless-project#readme",
+  "devDependencies": {
+    "jest": "^24.9.0",
+    "serverless-offline": "^5.12.1",
+    "serverless-pseudo-parameters": "^2.5.0"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.604.0"
+  }
+}
