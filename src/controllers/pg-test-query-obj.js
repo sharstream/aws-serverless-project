@@ -16,4 +16,4 @@ const getUser = async (user_id) => {
 }
 
 let getUserName = getUser('1234');
-module.exports = { getUsername };
+module.exports = { getUserName };

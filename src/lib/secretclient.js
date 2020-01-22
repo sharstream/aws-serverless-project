@@ -1,5 +1,6 @@
 'use strict';
 let secretsManagerInstance;
+global._cacheObject = {};
 module.exports = class SecretManager {
     constructor(opts) {
         this.defaults = {
@@ -58,11 +59,16 @@ module.exports = class SecretManager {
     async init(options) {
         if (options.secretsCache) {
             options.secretsCache.forEach(object => {
-              Object.assign(global._cacheObject, object)
+                if(object.dbname === 'pg_db') {
+                    const pgCurrentCred = {
+                        pgCred: object
+                    }
+                    Object.assign(global._cacheObject, pgCurrentCred);
+                }
             })
         }
 
-        if(!shouldFetchFromSecretsManager(options)){
+        if(!this.shouldFetchFromSecretsManager(options)){
             return next();
         }
 
