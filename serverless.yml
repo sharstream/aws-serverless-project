@@ -6,6 +6,7 @@ custom:
   prefix: FOO
 plugins:
   - serverless-pseudo-parameters
+  - serverless-offline
 provider:
   name: aws
   runtime: nodejs10.x
@@ -32,3 +33,11 @@ functions:
       TABLE: "${self:custom.dynamoDBTableName}"
       PREFIX: "${self:custom.prefix}"
     timeout: 300
+  rds-storage-user:
+    handler: src/functions/post-rds/handler.storage
+    name: rds-storage-user
+    events:
+      - http:
+        path: /postdata/user
+        method: post
+        cors: true
