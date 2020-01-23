@@ -1,5 +1,4 @@
 'use strict';
-let secretsManagerInstance;
 global._cacheObject = {};
 module.exports = class SecretManager {
     constructor(opts) {
@@ -12,14 +11,15 @@ module.exports = class SecretManager {
             secretsLoadedAt: new Date(0)
         }
         this.options = Object.assign({}, this.defaults, opts);
-
-        if(opts.region) {
-            this.region = region;
+        this.secretsManagerInstance = null;
+        if(this.options.awsSdkOptions.region) {
+            this.region = this.options.awsSdkOptions.region;
         }
     }
 
     /**
-     * @desc Calling the createSecret operation
+     * @desc Calling the createSecret operation.
+     *  For storing multiple values, we recommend that you use a JSON text string argument and specify key/value pairs
      * @param param list of required properties to seed secret manager obj
     */
     async createSecret(param) {
@@ -27,38 +27,29 @@ module.exports = class SecretManager {
         return new Promise((resolve, reject) => {
             const params = {
                 Name: param.name, //'STRING_VALUE', /* required */
-                ClientRequestToken: param.client, //'STRING_VALUE',
                 Description: param.description, //'STRING_VALUE',
-                KmsKeyId: param.key, //'STRING_VALUE',
-                SecretBinary: Buffer.from(param.raw), //|| 'STRING_VALUE' /* Strings will be Base-64 encoded on your behalf */,
-                SecretString: param.secretName, //'STRING_VALUE',
-                Tags: [
-                  {
-                    Key: 'postgres',
-                    Value: param.tabValue
-                  },
-                  /* more items */
-                ]
+                SecretString: JSON.stringify(param.value)//JSON Format - SDK requires quotation marks around the parameter
             };
-            this.secretsmanager.createSecret(params, function(err, data) {
+            this.secretsManagerInstance.createSecret(params, function(err, data) {
                 if (err) {
                     console.log(err, err.stack); // an error occurred
-                    reject(err)
+                    if(err.code === 'InvalidParamterType')
+                        reject({ error: err.code, message: err.message })
                 }
                  
                 console.log(data); // successful response
-                resolve({ secret: data }) // use encryption
+                resolve({ success: data }) // use encryption
             });
         })
     }
 
-    /**
+    /** 
      * @desc initilization to search for a secret and return a Promise object
      * @param {Object} options all required fields to retrieve a secret and its value 
      */
-    async init(options) {
-        if (options.secretsCache) {
-            options.secretsCache.forEach(object => {
+    async init() {
+        if (this.options.secretsCache === undefined) {
+            this.options.secretsCache.forEach(object => {
                 if(object.dbname === 'pg_db') {
                     const pgCurrentCred = {
                         pgCred: object
@@ -66,33 +57,64 @@ module.exports = class SecretManager {
                     Object.assign(global._cacheObject, pgCurrentCred);
                 }
             })
+        } else {
+
+            if (!this.shouldFetchFromSecretsManager(this.options)){
+                return next();
+            }
+    
+            this.secretsManagerInstance =
+            this.secretsManagerInstance ||
+            this.getSecretsManagerInstance(this.options.awsSdkOptions);
+
+            if (this.options.throwOnFailedCall && !this.options.secretsCache) {
+                throw Error('there is temporary problems with Secrets Manager.');
+            }
+    
+            if (this.options.secretsCache) {
+                this.options.secretsLoadedAt = new Date()
+            }
+    
+            let secretsCache;
+            try {
+                secretsCache = await this.getSecretsValues(this.options.secrets, this.secretsManagerInstance);
+                if(Array.isArray(secretsCache)) {
+                    secretsCache.forEach(secret => {
+                        this.storageSecretKey(secret);
+                    })
+                }
+            } catch (error) {
+                console.error(
+                    'failed to refresh secrets from Secrets Manager.',
+                    error.message
+                )
+                throw Error('failed to refresh secrets from Secrets Manager.');
+            }
         }
+    }
 
-        if(!this.shouldFetchFromSecretsManager(options)){
-            return next();
-        }
-
-        secretsManagerInstance =
-        secretsManagerInstance ||
-        this.getSecretsManagerInstance(options.awsSdkOptions)
-
-        let getSecrets;
-        try {
-            getSecrets = await this.getSecretsValues(options.secrets, secretsManagerInstance);
-        } catch (error) {
-            console.error(
-                'failed to refresh secrets from Secrets Manager.',
-                err.message
-            )
-            throw Error('failed to refresh secrets from Secrets Manager.');
-        }
-
-        if (options.throwOnFailedCall && !options.secretsCache) {
-            throw Error('there is temporary problems with Secrets Manager.');
-        }
-
-        if (options.secretsCache) {
-            options.secretsLoadedAt = new Date()
+    storageSecretKey(secret) {
+        switch (secret.key) {
+            case 'gisdb_ma':
+                Object.assign(global._cacheObject,{ gisdb_ma: secret.value });
+            case 'gisdb_maps':
+                Object.assign(global._cacheObject,{ gisdb_maps: secret.value });
+            case 'datadb_ma':
+                Object.assign(global._cacheObject,{ datadb_ma: secret.value });
+            case 'datadb_maps':
+                Object.assign(global._cacheObject,{ datadb_maps: secret.value });
+            case 'iotdb_ma':
+                Object.assign(global._cacheObject,{ iotdb_ma: secret.value });
+            case 'iotdb_maps':
+                Object.assign(global._cacheObject,{ iotdb_maps: secret.value });
+            case 'terraligndb_maps':
+                Object.assign(global._cacheObject,{ terraligndb_maps: secret.value });
+            case 'activationsdb_gm':
+                Object.assign(global._cacheObject,{ activationsdb_gm: secret.value });
+            case 'pgCred':
+                Object.assign(global._cacheObject,{ pgCred: secret.value });
+            default:
+                break;
         }
     }
 
@@ -104,19 +126,19 @@ module.exports = class SecretManager {
     async getSecretsValues(secrets, secretManager) {
         const secretsPromises = Object.keys(secrets).map(async key => {
             let secretName = secrets[key];
-            let secretValue;
+            let secretKey;
             try {
-                secretValue = await secretManager.getSecretValue({ SecretId: secretName }).promise();
+                secretKey = await secretManager.getSecretValue({ SecretId: secretName }).promise();
             } catch (error) {
                 console.log('Something went wrong with HTTP Secret Manager request', error);
                 throw Error('Something went wrong with HTTP Secret Manager request');
             }
 
-            const secret = JSON.parse(secretValue.SecretString || '{}');
-            
+            const secret = JSON.parse(secretKey.SecretString || '{}');
+
             return {
-                key: secret,
-                value: secretValue,
+                key: secretKey.Name,
+                value: secret,
                 isBeingUsed: true
             }
         });
