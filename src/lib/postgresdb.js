@@ -1,14 +1,22 @@
 'use strict';
 
-const SecretManager = require('./secretclient.js');
-const secretClient = new SecretManager({
+const secretFetch = require('./index.js');
+const opts = {
     awsSdkOptions: {
         region: 'us-east-2'
     },
+    cache: true,
+    cacheExpiryInMillis: Math.floor(Date.now() * 5 * 60000),
     secrets: ['pgdev']//these secrets are arbitrary for now
-})
+}
 
-secretClient.init();
+try {
+    const res = secretFetch(opts).init();
+    if(res) console.log(`Secrets successfully loaded at ${Date.now()}`)
+} catch (error) {
+    console.log(error)
+}
+
 const { Pool } = require('pg');
 
 let pgPool;

@@ -5,7 +5,7 @@ const getUser = async (user_id) => {
 
         try {
             const pgResponse = await pgHandler.query({ text: queryStr, values: [user_id]});
-            return pgResponse;
+            return pgResponse.rows;
         } catch (error) {
             console.error(
                 'pgHandler Error',
