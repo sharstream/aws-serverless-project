@@ -1,6 +1,6 @@
 'use strict';
 
-const secretFetch = require('./index.js');
+const secretsFetch = require('./index.js');
 const opts = {
     awsSdkOptions: {
         region: 'us-east-2'
@@ -11,7 +11,7 @@ const opts = {
 }
 
 try {
-    const res = secretFetch(opts).init();
+    const res = secretsFetch(opts).init();
     if(res) console.log(`Secrets successfully loaded at ${Date.now()}`)
 } catch (error) {
     console.log(error)
@@ -22,18 +22,19 @@ const { Pool } = require('pg');
 let pgPool;
 const poolInitializer = async () => {
     if(!pgPool) {
+        const pgCred = JSON.parse(global.cacheSecrets.pgCred);
         pgPool = new Pool({
-            username: process.env.username,
-            password: process.env.password,
-            database: process.env.dbname,
-            host: process.env.host,
-            port: process.env.port,
+            user: pgCred.user,
+            password: pgCred.password,
+            database: pgCred.dbname,
+            host: pgCred.host,
+            port: pgCred.port,
             max: 20,
             idleTimeoutMillis: 1000,
             connectionTimeoutMillis: 1000
         })
         pgPool.on('error', (err, client) => {
-            console.log('RDS Postgress Database Error Encountered', cient, err);
+            console.log('RDS Postgress Database Error Encountered', client, err);
             process.exit(1);
         })
     }
