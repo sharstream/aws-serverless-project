@@ -15,5 +15,7 @@ const getUser = async (user_id) => {
         }
 }
 
-let getUserName = getUser('1234');
-module.exports = { getUserName };
+module.exports = { getUser };
+// getUser('1234')
+//     .then(user => console.log(user))
+//     .catch(err => console.log(err))

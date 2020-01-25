@@ -1,17 +1,17 @@
 'use strict';
 
-global.cacheSecrets = {};
-
 const utilsHandler = require('./utils.js');
 const secretHelper = require('./aws-secrets-manager.js');
 
 module.exports = opts => {
+    global.cacheSecrets = {};
+
     const defaults = {
         awsSdkOptions: {},
         secrets: {},
         cache: false,
         secretsLoaded: false,
-        secretCache: undefined,
+        secretsCache: undefined,
         secretsLoadedAt: new Date(0)
     }
     const options = Object.assign({}, defaults, opts);
@@ -23,7 +23,7 @@ module.exports = opts => {
      */
     return {
         init: async () => {
-            if (options.secretsCache.length > 0 ) {
+            if (options.secretsCache !== undefined ) {
                 options.secretsCache.forEach(key => {
                     utilsHandler.assignSecretKey(key);
                 })
@@ -54,7 +54,7 @@ module.exports = opts => {
                     })
                 }
 
-                return Promise.resolve({ success: true })
+                return Promise.all(secretsCache)
             } catch (error) {
                 console.error(
                     'failed to refresh secrets from Secrets Manager.',

@@ -32,7 +32,7 @@ module.exports.createSecret = async (param, secretsManagerInstance) => {
  * @param {SecretsManager} secretManager aws SecretsManager instance 
  */
 module.exports.getSecretsValues = async (secrets, secretManager, options) => {
-    const secretsPromises = Object.keys(secrets).map(async key => {
+    let secretsPromises = Object.keys(secrets).map(async key => {
         let secretName = secrets[key];
         let secretKey;
         try {
@@ -42,11 +42,11 @@ module.exports.getSecretsValues = async (secrets, secretManager, options) => {
             throw Error('Something went wrong with HTTP Secret Manager request');
         }
 
-        const secret = JSON.parse(secretKey.SecretString || '{}');
+        let secret = JSON.parse(secretKey.SecretString || '{}');
 
-        const secretProperty = {};
-        secretProperty[secretKey.Name] = secret;
-        secretProperty = Object.assign(secret, { isExpired: false });
+        let secretProperty = {};
+        secretProperty[secretName] = secret;
+        secretProperty[secretName].isExpired = false;
 
         return secretProperty;
     });

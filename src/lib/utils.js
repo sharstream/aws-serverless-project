@@ -26,23 +26,32 @@ module.exports.assignSecretKey = (secret) => {
     const value = Object.keys(secret)[0];
     switch (value) {
         case 'gisdb_ma':
-            Object.assign(global.cacheSecrets,{ gisdb_ma: secret.value });
+            Object.assign(global.cacheSecrets,{ gisdb_ma: secret.gisdb_ma });
+            break;
         case 'gisdb_maps':
-            Object.assign(global.cacheSecrets,{ gisdb_maps: secret.value });
+            Object.assign(global.cacheSecrets,{ gisdb_maps: secret.gisdb_maps });
+            break;
         case 'datadb_ma':
-            Object.assign(global.cacheSecrets,{ datadb_ma: secret.value });
+            Object.assign(global.cacheSecrets,{ datadb_ma: secret.datadb_ma });
+            break;
         case 'datadb_maps':
-            Object.assign(global.cacheSecrets,{ datadb_maps: secret.value });
+            Object.assign(global.cacheSecrets,{ datadb_maps: secret.datadb_maps });
+            break;
         case 'iotdb_ma':
-            Object.assign(global.cacheSecrets,{ iotdb_ma: secret.value });
+            Object.assign(global.cacheSecrets,{ iotdb_ma: secret.iotdb_ma });
+            break;
         case 'iotdb_maps':
-            Object.assign(global.cacheSecrets,{ iotdb_maps: secret.value });
+            Object.assign(global.cacheSecrets,{ iotdb_maps: secret.iotdb_maps });
+            break;
         case 'terraligndb_maps':
-            Object.assign(global.cacheSecrets,{ terraligndb_maps: secret.value });
+            Object.assign(global.cacheSecrets,{ terraligndb_maps: secret.terraligndb_maps });
+            break;
         case 'activationsdb_gm':
-            Object.assign(global.cacheSecrets,{ activationsdb_gm: secret.value });
+            Object.assign(global.cacheSecrets,{ activationsdb_gm: secret.activationsdb_gm });
+            break;
         case 'pgCred':
-            Object.assign(global.cacheSecrets,{ pgCred: secret.value });
+            Object.assign(global.cacheSecrets,{ pgCred: secret.pgCred });
+            break;
         default:
             break;
     }
