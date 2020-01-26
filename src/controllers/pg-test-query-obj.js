@@ -1,4 +1,4 @@
-const pgHandler = require('../lib/postgresdb.js');
+const pgHandler = require('../lib/db/postgresdb.js');
 
 const getUser = async (user_id) => {
         const queryStr = `select * from usersample as us where user_id = $1`;
