@@ -8,17 +8,19 @@ module.exports.shouldFetchFromSecretsManager = ({
     }) => {
     // if caching is OFF, or we haven't loaded anything yet, then definitely load it from SecretsManager
     if (!cache || !secretsLoaded) {
+        // console.log(`!cache: ${cache} || !secretsLoaded:${secretsLoaded}`)
         return true;
     }
     
     // if caching is ON, and cache expiration is ON, and enough time has passed, then also load it from SecretsManager
     const now = new Date()
     const millisSinceLastLoad = now.getTime() - secretsLoadedAt.getTime();
+    // console.log(`cacheExpiryInMillis && millisSinceLastLoad: ${millisSinceLastLoad} > cacheExpiryInMillis: ${cacheExpiryInMillis}`)
     if (cacheExpiryInMillis && millisSinceLastLoad > cacheExpiryInMillis) {
         return true;
     }
     
-    // otherwise, don't bother
+    // console.log(`otherwise, don't bother`)
     return false;
 }
 

@@ -6,18 +6,18 @@ const opts = {
         region: 'us-east-1'
     },
     cache: true,
-    cacheExpiryInMillis: Math.floor(Date.now() * 5 * 60000),
+    cacheExpiryInMillis: Date.now() + (5 * 60000),
     secrets: ['pgCred', 'gisdb_ma']//these secrets are arbitrary for now
 }
 
 const { Pool } = require('pg');
-
+// console.log(`cacheExpiryInMillis: ${opts.cacheExpiryInMillis}`)
 const poolInitializer = () => {
     return new Promise((resolve, reject) => {
         secretsFetch(opts).init()
         .then(secrets => {
             if(secrets) console.log(`Secrets successfully loaded at ${Date.now()}`)
-            console.log('secrets loaded::', global.cacheSecrets)
+            console.log('secrets cached::', global.cacheSecrets)
             const pgCred = global.cacheSecrets.pgCred;
             let pgPool = new Pool({
                 user: pgCred.username,
@@ -37,7 +37,7 @@ const poolInitializer = () => {
             resolve(pgPool);
         })
         .catch(error =>{
-            console.log('Pool error', error)
+            // console.log('Pool error', error)
             reject(error)
         })
 
@@ -56,7 +56,9 @@ const query = async (queryObject, retriesLeft) => {
         if(error.code === '28P01') {   
             //caught Error
             retriesLeft = retriesLeft + 1;
-            // console.log(`retries # ${retries}`)
+            // console.log(`retries # ${retriesLeft}`)
+            if(retriesLeft >= 1 || retriesLeft >= 2)
+                opts.secretsLoaded = true;
             // if(retriesLeft >= 2) {//testing if the client retry is working as expected
             //     process.env.username = 'postgres';
             // }

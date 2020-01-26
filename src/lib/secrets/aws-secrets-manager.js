@@ -31,14 +31,14 @@ module.exports.createSecret = async (param, secretsManagerInstance) => {
  * @param {Array<Object>} secrets list of all secrets available
  * @param {SecretsManager} secretManager aws SecretsManager instance 
  */
-module.exports.getSecretsValues = async (secrets, secretManager, options) => {
+module.exports.getSecretsValues = async (secretManager, secrets) => {
     let secretsPromises = Object.keys(secrets).map(async key => {
         let secretName = secrets[key];
         let secretKey;
         try {
             secretKey = await secretManager.getSecretValue({ SecretId: secretName }).promise();
         } catch (error) {
-            console.log('Something went wrong with HTTP Secret Manager request', error);
+            // console.log('Something went wrong with HTTP Secret Manager request', error);
             throw Error('Something went wrong with HTTP Secret Manager request');
         }
 
@@ -50,9 +50,6 @@ module.exports.getSecretsValues = async (secrets, secretManager, options) => {
 
         return secretProperty;
     });
-
-    options.secretsLoaded = true;
-    options.cache = true;
 
     return Promise.all(secretsPromises);
 }
