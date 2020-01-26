@@ -1,6 +1,6 @@
 'use strict';
 
-const utilsHandler = require('./utils.js');
+const utilsHandler = require('../helpers/utils.js');
 const secretHelper = require('./aws-secrets-manager.js');
 
 module.exports = opts => {

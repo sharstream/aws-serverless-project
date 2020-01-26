@@ -1,6 +1,6 @@
 'use strict';
 
-const secretsFetch = require('./index.js');
+const secretsFetch = require('../secrets/index.js');
 const opts = {
     awsSdkOptions: {
         region: 'us-east-1'
