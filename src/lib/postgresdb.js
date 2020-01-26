@@ -44,27 +44,30 @@ const poolInitializer = () => {
     })
 }
 
-const query = async (queryObject, retries) => {
+const query = async (queryObject, retriesLeft) => {
     let dbResponse;
     try {
         const pgPool = await poolInitializer();
         const client = await pgPool.connect();
         dbResponse = await client.query(queryObject);
         // tell the pool to destroy this client
-        client.release(true);
+        client.release(true);//client.end()
     } catch (error) {
         if(error.code === '28P01') {   
-            //Handler Error
-            retries = retries + 1;
+            //caught Error
+            retriesLeft = retriesLeft + 1;
+            // console.log(`retries # ${retries}`)
+            // if(retriesLeft >= 2) {//testing if the client retry is working as expected
+            //     process.env.username = 'postgres';
+            // }
+            if(retriesLeft >= 3)
+                throw Error('Max retries exceeded, please check AWS-SecretsManager manager for any sync failover');
             
-            if(retries > 3)
-                throw Error('Retry has been unsuccessful, check AWS-SecretsManager manager for any failover');
-            
-            let delay = Math.pow(2); //constraints for every postgres sleep time connections
-            await new Promise(resolve => setTimeout(resolve, delay));
-            await query(queryObject, retries);
+            let interval = Math.pow(2, retriesLeft) * 1000; //exponential backoff for every postgres sleep time connections
+            await new Promise(resolve => setTimeout(resolve, interval));
+            return await query(queryObject, retriesLeft);
         } else {
-            throw Error('Postgres Unhandler Error');
+            throw Error('Postgres Uncaught Error');
         }
     }
 
