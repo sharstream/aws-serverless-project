@@ -1,5 +1,5 @@
 /node_modules/**
-/coverages/**
+/coverage/**
 SD_Store
 /.serverless/**
 /.vscode

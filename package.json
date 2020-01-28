@@ -4,7 +4,7 @@
   "description": "Aws project reference for entry-level serverless framework use cases",
   "main": "index.js",
   "scripts": {
-    "test": "jest --config /src/config/unit/jest.js",
+    "test": "jest --config ./src/__tests__/unit/config/jest.js --rootDir --coverage",
     "local": "sls offline start -s dev --provideRuntime"
   },
   "repository": {
