@@ -1,5 +1,7 @@
-'use strict';
-    
+'use strict'; 
+/**
+ * @api private
+ */
 module.exports.shouldFetchFromSecretsManager = ({
         secretsLoaded,
         secretsLoadedAt,
@@ -24,6 +26,9 @@ module.exports.shouldFetchFromSecretsManager = ({
     return false;
 }
 
+/**
+ * @api private
+ */
 module.exports.assignSecretKey = (secret, options) => {
     const value = Object.keys(secret)[0];
     let secretOpts = {
@@ -66,6 +71,9 @@ module.exports.assignSecretKey = (secret, options) => {
     }
 }
 
+/**
+ * @api private
+ */
 module.exports.checkAllExpiredSecrets = (cacheSecrets, secretsLoadedAt, ttl) => {
     const updatedSecrets = cacheSecrets.map( secret => {
         if(secret.isExpired && secretsLoadedAt > ttl) {

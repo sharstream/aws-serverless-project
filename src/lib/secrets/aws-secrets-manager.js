@@ -1,6 +1,7 @@
 'use strict';
 
  /**
+  * @api private
  * @desc Calling the createSecret operation.
  *  For storing multiple values, we recommend that you use a JSON text string argument and specify key/value pairs
  * @param param list of required properties to seed secret manager obj
@@ -27,6 +28,7 @@ module.exports.createSecret = async (secretsManagerInstance, param) => {
 }
 
 /**
+ * @api private
  * @desc grab and loop through all secrets based on a name and value
  * @param {Array<Object>} secrets list of all secrets available
  * @param {SecretsManager} secretsManagerInstance aws SecretsManager instance 
@@ -55,6 +57,7 @@ module.exports.getSecretsValues = async (secretsManagerInstance, secrets) => {
 }
 
 /**
+ * @api private
  * @param{Object} awsSdkOptions
  * @return an instance for AWS SecretsManager
  */

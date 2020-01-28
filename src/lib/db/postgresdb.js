@@ -11,6 +11,9 @@ const opts = {
 
 const { Pool } = require('pg');
 // console.log(`cacheExpiryInMillis: ${opts.cacheExpiryInMillis}`)
+/**
+ * @api private
+ */
 const poolInitializer = () => {
     return new Promise((resolve, reject) => {
         secretsFetch().init(opts)
@@ -19,7 +22,7 @@ const poolInitializer = () => {
             console.log('secrets cached::', global.cacheSecrets)
             const pgCred = secrets[0].pgCred;
             let pgPool = new Pool({
-                user: process.env.username,
+                user: pgCred.username,
                 password: pgCred.password,
                 database: pgCred.dbname,
                 host: pgCred.host,
