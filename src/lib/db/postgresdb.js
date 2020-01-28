@@ -5,8 +5,7 @@ const opts = {
     awsSdkOptions: {
         region: 'us-east-1'
     },
-    cache: true,
-    cacheExpiryInMillis: Date.now() + (5 * 60000),
+    cacheExpiryInMillis: Date.now() + (0.1 * 60000),
     secrets: ['pgCred', 'gisdb_ma']//these secrets are arbitrary for now
 }
 
@@ -14,13 +13,13 @@ const { Pool } = require('pg');
 // console.log(`cacheExpiryInMillis: ${opts.cacheExpiryInMillis}`)
 const poolInitializer = () => {
     return new Promise((resolve, reject) => {
-        secretsFetch(opts).init()
+        secretsFetch().init(opts)
         .then(secrets => {
             if(secrets) console.log(`Secrets successfully loaded at ${Date.now()}`)
             console.log('secrets cached::', global.cacheSecrets)
-            const pgCred = global.cacheSecrets.pgCred;
+            const pgCred = secrets[0].pgCred;
             let pgPool = new Pool({
-                user: pgCred.username,
+                user: process.env.username,
                 password: pgCred.password,
                 database: pgCred.dbname,
                 host: pgCred.host,
@@ -37,7 +36,6 @@ const poolInitializer = () => {
             resolve(pgPool);
         })
         .catch(error =>{
-            // console.log('Pool error', error)
             reject(error)
         })
 
@@ -56,16 +54,11 @@ const query = async (queryObject, retriesLeft) => {
         if(error.code === '28P01') {   
             //caught Error
             retriesLeft = retriesLeft + 1;
-            // console.log(`retries # ${retriesLeft}`)
-            if(retriesLeft >= 1 || retriesLeft >= 2)
-                opts.secretsLoaded = true;
-            // if(retriesLeft >= 2) {//testing if the client retry is working as expected
-            //     process.env.username = 'postgres';
-            // }
+
             if(retriesLeft >= 3)
                 throw Error('Max retries exceeded, please check AWS-SecretsManager manager for any sync failover');
             
-            let interval = Math.pow(2, retriesLeft) * 1000; //exponential backoff for every postgres sleep time connections
+            let interval = Math.pow(2, retriesLeft) * 3000; //exponential backoff for every postgres sleep time connections
             await new Promise(resolve => setTimeout(resolve, interval));
             return await query(queryObject, retriesLeft);
         } else {

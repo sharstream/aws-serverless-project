@@ -5,7 +5,7 @@
  *  For storing multiple values, we recommend that you use a JSON text string argument and specify key/value pairs
  * @param param list of required properties to seed secret manager obj
 */
-module.exports.createSecret = async (param, secretsManagerInstance) => {
+module.exports.createSecret = async (secretsManagerInstance, param) => {
 
     return new Promise((resolve, reject) => {
         const params = {
@@ -29,14 +29,14 @@ module.exports.createSecret = async (param, secretsManagerInstance) => {
 /**
  * @desc grab and loop through all secrets based on a name and value
  * @param {Array<Object>} secrets list of all secrets available
- * @param {SecretsManager} secretManager aws SecretsManager instance 
+ * @param {SecretsManager} secretsManagerInstance aws SecretsManager instance 
  */
-module.exports.getSecretsValues = async (secretManager, secrets) => {
+module.exports.getSecretsValues = async (secretsManagerInstance, secrets) => {
     let secretsPromises = Object.keys(secrets).map(async key => {
         let secretName = secrets[key];
         let secretKey;
         try {
-            secretKey = await secretManager.getSecretValue({ SecretId: secretName }).promise();
+            secretKey = await secretsManagerInstance.getSecretValue({ SecretId: secretName }).promise();
         } catch (error) {
             // console.log('Something went wrong with HTTP Secret Manager request', error);
             throw Error('Something went wrong with HTTP Secret Manager request');

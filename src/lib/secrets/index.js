@@ -1,19 +1,15 @@
 'use strict';
 
+global.cacheSecrets = [];
 const utilsHandler = require('../helpers/utils.js');
 const secretHelper = require('./aws-secrets-manager.js');
-global.cacheSecrets = {};
-module.exports = opts => {
+module.exports = () => {
     const defaults = {
         awsSdkOptions: {},
         secrets: {},
-        cache: false,
-        throwOnFailedCall: false,
-        cacheExpiryInMillis: undefined,
-        secretsCache: undefined,
-        secretsLoadedAt: new Date(0)
+        throwOnFailedCall: false
     }
-    const options = Object.assign({}, defaults, opts);
+    
     let secretsManagerInstance = null;
 
     /** 
@@ -21,52 +17,54 @@ module.exports = opts => {
      * @param {Object} options all required fields to retrieve a secret and its value 
      */
     return {
-        init: async () => {
-            if (options.secretsCache) {
-                options.secretsCache.forEach(key => {
-                    utilsHandler.assignSecretKey(key);
-                })
+        init: async (opts) => {
+            const options = Object.assign({}, defaults, opts);
+
+            let isCached;
+            if (global.cacheSecrets.length > 0
+            && global.cacheSecrets instanceof Array
+            && Array.isArray(global.cacheSecrets)) {
+                isCached = global.cacheSecrets.every(secret => (secret.cache === true && secret.secretsLoaded === true))
             }
 
-            if (!utilsHandler.shouldFetchFromSecretsManager(options)){
-                // console.log('it should not fetch from SecretsManager');
-                // console.log(JSON.stringify(global.cacheSecrets))
-                return Promise.resolve(Object.keys(global.cacheSecrets).map(secret => secret));
+            if ( isCached && global.cacheSecrets.every( secret => !utilsHandler.shouldFetchFromSecretsManager(secret))) {
+                return Promise.all(global.cacheSecrets);
             }
-
-            // console.log('after fetching secrets from cache!');
     
             secretsManagerInstance =
             secretsManagerInstance ||
             secretHelper.getSecretsManagerInstance(options.awsSdkOptions);
     
-            let secretsCache;
+            let secretsCache, secretsOpts;
             try {
                 secretsCache = await secretHelper.getSecretsValues(secretsManagerInstance, options.secrets);
                 if(Array.isArray(secretsCache)) {
+                    options.secretsLoadedAt = new Date();
+                    options.secretsLoaded = true;
+                    options.cache = true;
+
+                    global.cacheSecrets = [];
                     
-                    secretsCache.forEach(secret => {
-                        utilsHandler.assignSecretKey(secret);
-                    })
+                    secretsOpts = secretsCache.map(secret => {
+                        utilsHandler.assignSecretKey(secret, options);
+                        let secretObj = {}
+                        secretObj = Object.assign(
+                            {},
+                            secret
+                        )
+                        return secretObj;
+                    });
                 }
 
-                options.secretsCache = secretsCache;
-                options.secretsLoadedAt = new Date();
-                options.secretsLoaded = true;
-
-                return Promise.all(secretsCache)
+                return Promise.all(secretsOpts)
             } catch (error) {
                 console.error(
                     'failed to refresh secrets from Secrets Manager.',
                     error.message
                 )
 
-                if (options.throwOnFailedCall && !options.secretsCache) {
+                if (options.throwOnFailedCall && !secretsCache && !secretsOpts) {
                     throw Error('there is temporary problems with Secrets Manager.');
-                }
-        
-                if (options.secretsCache) {
-                    options.secretsLoadedAt = new Date()
                 }
             }
 

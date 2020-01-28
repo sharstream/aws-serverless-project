@@ -8,51 +8,58 @@ module.exports.shouldFetchFromSecretsManager = ({
     }) => {
     // if caching is OFF, or we haven't loaded anything yet, then definitely load it from SecretsManager
     if (!cache || !secretsLoaded) {
-        // console.log(`!cache: ${cache} || !secretsLoaded:${secretsLoaded}`)
         return true;
     }
     
     // if caching is ON, and cache expiration is ON, and enough time has passed, then also load it from SecretsManager
     const now = new Date()
-    const millisSinceLastLoad = now.getTime() - secretsLoadedAt.getTime();
-    // console.log(`cacheExpiryInMillis && millisSinceLastLoad: ${millisSinceLastLoad} > cacheExpiryInMillis: ${cacheExpiryInMillis}`)
-    if (cacheExpiryInMillis && millisSinceLastLoad > cacheExpiryInMillis) {
+    const millisSinceLastLoad = Math.abs(now.getSeconds() - secretsLoadedAt.getSeconds());
+
+    if (cacheExpiryInMillis && millisSinceLastLoad > 5) {
+        console.log(`secrets expired! - they need reload!`)
         return true;
     }
     
-    // console.log(`otherwise, don't bother`)
+    // otherwise, don't bother
     return false;
 }
 
-module.exports.assignSecretKey = (secret) => {
+module.exports.assignSecretKey = (secret, options) => {
     const value = Object.keys(secret)[0];
+    let secretOpts = {
+        secretsLoaded: options.secretsLoaded,
+        secretsLoadedAt: options.secretsLoadedAt,
+        cache: options.cache,
+        cacheExpiryInMillis: options.cacheExpiryInMillis
+    }
+    let secretAssigned = Object.assign(secret, secretOpts);
     switch (value) {
         case 'gisdb_ma':
-            Object.assign(global.cacheSecrets,{ gisdb_ma: secret.gisdb_ma });
+            global.cacheSecrets.push(secretAssigned);
             break;
         case 'gisdb_maps':
-            Object.assign(global.cacheSecrets,{ gisdb_maps: secret.gisdb_maps });
+            global.cacheSecrets.push(secretAssigned);
             break;
         case 'datadb_ma':
-            Object.assign(global.cacheSecrets,{ datadb_ma: secret.datadb_ma });
+            global.cacheSecrets.push(secretAssigned);
             break;
         case 'datadb_maps':
-            Object.assign(global.cacheSecrets,{ datadb_maps: secret.datadb_maps });
+            global.cacheSecrets.push(secretAssigned);
             break;
         case 'iotdb_ma':
-            Object.assign(global.cacheSecrets,{ iotdb_ma: secret.iotdb_ma });
+            global.cacheSecrets.push(secretAssigned);
             break;
         case 'iotdb_maps':
-            Object.assign(global.cacheSecrets,{ iotdb_maps: secret.iotdb_maps });
+            global.cacheSecrets.push(secretAssigned);
             break;
         case 'terraligndb_maps':
-            Object.assign(global.cacheSecrets,{ terraligndb_maps: secret.terraligndb_maps });
+            global.cacheSecrets.push(secretAssigned);
             break;
         case 'activationsdb_gm':
-            Object.assign(global.cacheSecrets,{ activationsdb_gm: secret.activationsdb_gm });
+            global.cacheSecrets.push(secretAssigned);
             break;
         case 'pgCred':
-            Object.assign(global.cacheSecrets,{ pgCred: secret.pgCred });
+            global.cacheSecrets.push(secretAssigned);
             break;
         default:
             break;
