@@ -1,0 +1,27 @@
+version: 2.1
+jobs:
+  build:
+    working_directory: ~/aws-serverless-project
+    docker:
+      - image: circleci/node:10.16.3
+      - image: postman/newman_alpine33
+    steps:
+      - checkout
+      - run:
+          name: npm-jest-install
+          command: "sudo npm install -g jest"
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package-lock.json" }}
+      - run:
+          name: install-npm-modules
+          command: npm install
+      - save_cache:
+          key: dependency-cache-{{ checksum "package-lock.json" }}
+          paths:
+            - ./node_modules
+      - run:
+          name: unit-test
+          command: npx jest --config ./src/__tests__/unit/config/jest.js --rootDir --coverage
+      - integration:
+          name: integration-test
+          command: newman run ./src/__tests__/integration/serverless-api.postman_collection.json -e ./src/__tests__/integration/environments/dev.json
