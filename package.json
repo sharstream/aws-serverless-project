@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/sharstream/aws-serverless-project#readme",
   "devDependencies": {
+    "aws-sdk-mock": "^5.0.0",
     "jest": "^24.9.0",
     "serverless-offline": "^5.12.1",
     "serverless-pseudo-parameters": "^2.5.0"

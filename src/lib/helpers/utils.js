@@ -29,46 +29,9 @@ module.exports.shouldFetchFromSecretsManager = ({
 /**
  * @api private
  */
-module.exports.assignSecretKey = (secret, options) => {
-    const value = Object.keys(secret)[0];
-    let secretOpts = {
-        secretsLoaded: options.secretsLoaded,
-        secretsLoadedAt: options.secretsLoadedAt,
-        cache: options.cache,
-        cacheExpiryInMillis: options.cacheExpiryInMillis
-    }
+module.exports.assignCacheSecrets = (secret, secretOpts) => {
     let secretAssigned = Object.assign(secret, secretOpts);
-    switch (value) {
-        case 'gisdb_ma':
-            global.cacheSecrets.push(secretAssigned);
-            break;
-        case 'gisdb_maps':
-            global.cacheSecrets.push(secretAssigned);
-            break;
-        case 'datadb_ma':
-            global.cacheSecrets.push(secretAssigned);
-            break;
-        case 'datadb_maps':
-            global.cacheSecrets.push(secretAssigned);
-            break;
-        case 'iotdb_ma':
-            global.cacheSecrets.push(secretAssigned);
-            break;
-        case 'iotdb_maps':
-            global.cacheSecrets.push(secretAssigned);
-            break;
-        case 'terraligndb_maps':
-            global.cacheSecrets.push(secretAssigned);
-            break;
-        case 'activationsdb_gm':
-            global.cacheSecrets.push(secretAssigned);
-            break;
-        case 'pgCred':
-            global.cacheSecrets.push(secretAssigned);
-            break;
-        default:
-            break;
-    }
+    global.cacheSecrets.push(secretAssigned)
 }
 
 /**
@@ -76,7 +39,7 @@ module.exports.assignSecretKey = (secret, options) => {
  */
 module.exports.checkAllExpiredSecrets = (cacheSecrets, secretsLoadedAt, ttl) => {
     const updatedSecrets = cacheSecrets.map( secret => {
-        if(secret.isExpired && secretsLoadedAt > ttl) {
+        if(!secret.isExpired && secretsLoadedAt > ttl) {
             secret = Object.assign({}, { isExpired: true });
             return secret;
         } else {

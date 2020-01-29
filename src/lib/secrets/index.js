@@ -43,10 +43,17 @@ module.exports = () => {
                     options.secretsLoaded = true;
                     options.cache = true;
 
+                    let secretOpts = {
+                        secretsLoaded: options.secretsLoaded,
+                        secretsLoadedAt: options.secretsLoadedAt,
+                        cache: options.cache,
+                        cacheExpiryInMillis: options.cacheExpiryInMillis
+                    }
+
                     global.cacheSecrets = [];
                     
                     secretsOpts = secretsCache.map(secret => {
-                        utilsHandler.assignSecretKey(secret, options);
+                        utilsHandler.assignSecretKey(secret, secretOpts);
                         let secretObj = {}
                         secretObj = Object.assign(
                             {},
