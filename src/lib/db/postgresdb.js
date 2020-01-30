@@ -1,10 +1,9 @@
 'use strict';
 
+const config = require('./config.json');
 const secretsFetch = require('../secrets/index.js');
 const opts = {
-    awsSdkOptions: {
-        region: 'us-east-1'
-    },
+    awsSdkOptions: config,
     cacheExpiryInMillis: Date.now() + (0.1 * 60000),
     secrets: ['pgCred', 'gisdb_ma']//these secrets are arbitrary for now
 }
@@ -14,6 +13,7 @@ const { Pool } = require('pg');
 /**
  * @api private
  */
+
 const poolInitializer = () => {
     return new Promise((resolve, reject) => {
         secretsFetch().init(opts)
@@ -21,7 +21,7 @@ const poolInitializer = () => {
             if(secrets) console.log(`Secrets successfully loaded at ${Date.now()}`)
             console.log('secrets cached::', global.cacheSecrets)
             const pgCred = secrets[0].pgCred;
-            let pgPool = new Pool({
+            const pgPool = new Pool({
                 user: pgCred.username,
                 password: pgCred.password,
                 database: pgCred.dbname,
@@ -39,37 +39,41 @@ const poolInitializer = () => {
             resolve(pgPool);
         })
         .catch(error =>{
-            reject(error)
+            setImmediate(() => {
+                reject(error)
+            })
         })
 
     })
 }
 
-const query = async (queryObject, retriesLeft) => {
-    let dbResponse;
+const query = async (queryObject, retriesLeft = 0) => {
+    let client;
     try {
-        const pgPool = await poolInitializer();
-        const client = await pgPool.connect();
-        dbResponse = await client.query(queryObject);
+        const pgPool = await poolInitializer(),
+            client = await pgPool.connect();
+        const { rows } = await client.query(queryObject);
         // tell the pool to destroy this client
         client.release(true);//client.end()
+        return rows;
     } catch (error) {
-        if(error.code === '28P01') {   
+        if (client) client.release(true);
+        if (error.code === '28P01') {   
             //caught Error
             retriesLeft = retriesLeft + 1;
 
             if(retriesLeft >= 3)
                 throw Error('Max retries exceeded, please check AWS-SecretsManager manager for any sync failover');
-            
+                
             let interval = Math.pow(2, retriesLeft) * 3000; //exponential backoff for every postgres sleep time connections
             await new Promise(resolve => setTimeout(resolve, interval));
             return await query(queryObject, retriesLeft);
         } else {
-            throw Error('Postgres Uncaught Error');
+            setImmediate(() => {
+                throw Error('Postgres Uncaught Error');
+            })
         }
     }
-
-    return dbResponse;
 }
 
 module.exports = {

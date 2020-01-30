@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "jest --config ./src/__tests__/unit/config/jest.js --rootDir --coverage",
-    "local": "sls offline start -s dev --provideRuntime"
+    "local": "sls offline start -s dev --provideRuntime",
+    "deploy": "sls deploy -stage dev"
   },
   "repository": {
     "type": "git",

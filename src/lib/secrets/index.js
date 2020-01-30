@@ -53,7 +53,7 @@ module.exports = () => {
                     global.cacheSecrets = [];
                     
                     secretsOpts = secretsCache.map(secret => {
-                        utilsHandler.assignSecretKey(secret, secretOpts);
+                        utilsHandler.assignCacheSecrets(secret, secretOpts);
                         let secretObj = {}
                         secretObj = Object.assign(
                             {},
@@ -74,7 +74,6 @@ module.exports = () => {
                     throw Error('there is temporary problems with Secrets Manager.');
                 }
             }
-
         }
     } 
 }
