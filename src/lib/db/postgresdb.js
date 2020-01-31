@@ -1,7 +1,7 @@
 'use strict';
 
-const config = require('./config.json');
 const secretsFetch = require('../secrets/index.js');
+const config = require('./config.json');
 const opts = {
     awsSdkOptions: config,
     cacheExpiryInMillis: Date.now() + (0.1 * 60000),
