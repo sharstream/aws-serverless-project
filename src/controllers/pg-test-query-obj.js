@@ -11,7 +11,7 @@ const getUser = async (user_id) => {
         const queryStr = `select * from usersample as us where user_id = $1`;
 
         try {
-            const queryOptions = await pgPool.pool(opts);
+            const queryOptions = await pgPool.pgInitializer(opts);
             const rows = await queryOptions.query({ text: queryStr, values: [user_id]});
             return rows[0];
         } catch (error) {
