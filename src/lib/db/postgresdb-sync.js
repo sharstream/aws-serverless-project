@@ -38,7 +38,7 @@ const pgInitializer = async (opts) => {
             while(retries < 3) {
                 try {
                     if (!pool) await this.init();
-                    if (!this.checkPoolOptions(pool.options)) await this.init();
+                    else if (!this.checkPoolOptions(pool.options)) await this.init();
                     client = await pool.connect();
                     const { rows } = await pool.query(queryOptions);
                     client.release();
