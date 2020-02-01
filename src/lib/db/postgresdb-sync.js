@@ -40,8 +40,8 @@ const pgInitializer = async (opts) => {
                     if (!pool) await this.init();
                     if (!this.checkPoolOptions(pool.options)) {
                         await this.init();
-                        client = await pool.connect();
                     }
+                    client = await pool.connect();
                     const { rows } = await pool.query(queryOptions);
                     client.release();
                     return rows;
