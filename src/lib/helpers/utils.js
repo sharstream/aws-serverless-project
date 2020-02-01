@@ -4,9 +4,9 @@
  */
 module.exports.shouldFetchFromSecretsManager = ({
         secretsLoaded,
-        secretsLoadedAt,
+        secretsSetAt,
         cache,
-        cacheExpiryInMillis
+        cacheExpiryIn
     }) => {
     // if caching is OFF, or we haven't loaded anything yet, then definitely load it from SecretsManager
     if (!cache || !secretsLoaded) {
@@ -14,10 +14,10 @@ module.exports.shouldFetchFromSecretsManager = ({
     }
     
     // if caching is ON, and cache expiration is ON, and enough time has passed, then also load it from SecretsManager
-    const now = new Date()
-    const millisSinceLastLoad = Math.abs(now.getSeconds() - secretsLoadedAt.getSeconds());
+    const now = Date.now()
+    const millisSinceLastLoad = Math.abs(now - secretsSetAt);
 
-    if (cacheExpiryInMillis && millisSinceLastLoad > 5) {
+    if (cacheExpiryIn && millisSinceLastLoad > cacheExpiryIn) {
         console.log(`secrets expired! - they need reload!`)
         return true;
     }
@@ -29,9 +29,8 @@ module.exports.shouldFetchFromSecretsManager = ({
 /**
  * @api private
  */
-module.exports.assignCacheSecrets = (secret, secretOpts) => {
-    let secretAssigned = Object.assign(secret, secretOpts);
-    global.cacheSecrets.push(secretAssigned)
+module.exports.assignCacheSecrets = (secret) => {
+    global.cacheSecrets = Object.assign({}, global.cacheSecrets , secret);
 }
 
 /**

@@ -1,6 +1,6 @@
 'use strict';
 
-global.cacheSecrets = [];
+global.cacheSecrets = {};
 const utilsHandler = require('../helpers/utils.js');
 const secretHelper = require('./aws-secrets-manager.js');
 module.exports = () => {
@@ -20,50 +20,51 @@ module.exports = () => {
         init: async (opts) => {
             const options = Object.assign({}, defaults, opts);
 
-            let isCached;
-            if (global.cacheSecrets.length > 0
-            && global.cacheSecrets instanceof Array
-            && Array.isArray(global.cacheSecrets)) {
-                isCached = global.cacheSecrets.every(secret => (secret.cache === true && secret.secretsLoaded === true))
+            let isCacheable;
+            if (Object.keys(global.cacheSecrets).length > 0
+            && global.cacheSecrets instanceof Object
+            && typeof(global.cacheSecrets) === 'object') {
+                isCacheable = (global.cacheSecrets.cache === true && global.cacheSecrets.secretsLoaded === true)
             }
 
-            if ( isCached && global.cacheSecrets.every( secret => !utilsHandler.shouldFetchFromSecretsManager(secret))) {
-                return Promise.all(global.cacheSecrets);
+            if (isCacheable && !utilsHandler.shouldFetchFromSecretsManager(global.cacheSecrets)) {
+                return Promise.resolve(global.cacheSecrets);
             }
     
             secretsManagerInstance =
             secretsManagerInstance ||
             secretHelper.getSecretsManagerInstance(options.awsSdkOptions);
     
-            let secretsCache, secretsOpts;
+            let secretsCache, secretsResult;
             try {
                 secretsCache = await secretHelper.getSecretsValues(secretsManagerInstance, options.secrets);
                 if(Array.isArray(secretsCache)) {
-                    options.secretsLoadedAt = new Date();
+                    options.secretsSetAt = Date.now();
                     options.secretsLoaded = true;
                     options.cache = true;
 
                     let secretOpts = {
                         secretsLoaded: options.secretsLoaded,
-                        secretsLoadedAt: options.secretsLoadedAt,
+                        secretsSetAt: options.secretsSetAt,
                         cache: options.cache,
-                        cacheExpiryInMillis: options.cacheExpiryInMillis
+                        cacheExpiryIn: options.cacheExpiryInMillis,
                     }
 
-                    global.cacheSecrets = [];
-                    
-                    secretsOpts = secretsCache.map(secret => {
-                        utilsHandler.assignCacheSecrets(secret, secretOpts);
-                        let secretObj = {}
-                        secretObj = Object.assign(
-                            {},
-                            secret
-                        )
-                        return secretObj;
-                    });
+                    global.cacheSecrets = {};
+                      
+                    secretsResult = secretsCache.reduce( (object, secret) => {
+                        utilsHandler.assignCacheSecrets(secret);
+                        return Object.assign(object, secret);
+                    }, {});
+
+                    global.cacheSecrets = Object.assign({}, global.cacheSecrets, secretOpts);
+                    secretsResult = Object.assign({}, secretsResult, secretOpts);
+                      
+                    console.log( secretsResult );
+
                 }
 
-                return Promise.all(secretsOpts)
+                return Promise.resolve(secretsResult);
             } catch (error) {
                 console.error(
                     'failed to refresh secrets from Secrets Manager.',
@@ -71,7 +72,7 @@ module.exports = () => {
                 )
 
                 if (options.throwOnFailedCall && !secretsCache && !secretsOpts) {
-                    throw Error('there is temporary problems with Secrets Manager.');
+                    return Promise.reject(new Error('there is temporary problems with Secrets Manager.'));
                 }
             }
         }

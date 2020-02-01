@@ -19,7 +19,7 @@ const pgInitializer = async (opts) => {
     }
     this.init = async () => {
         if (!secrets) await this.renewalSecrets();
-        let pgCred = secrets[0].pgCred;
+        let pgCred = secrets.pgCred;
         console.log(`renewal secret: ${JSON.stringify(pgCred)}`)
         pool = new pgPool({
             user: process.env.username,
@@ -38,8 +38,10 @@ const pgInitializer = async (opts) => {
             while(retries < 3) {
                 try {
                     if (!pool) await this.init();
-                    else if (!this.checkPoolOptions(pool.options)) await this.init();
-                    client = await pool.connect();
+                    if (!this.checkPoolOptions(pool.options)) {
+                        await this.init();
+                        client = await pool.connect();
+                    }
                     const { rows } = await pool.query(queryOptions);
                     client.release();
                     return rows;
