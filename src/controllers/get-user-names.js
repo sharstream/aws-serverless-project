@@ -12,7 +12,7 @@ const getUser = async (user_id) => {
 
         try {
             const queryOptions = await pgPool.pgInitializer(opts);
-            const rows = await queryOptions.query({ text: queryStr, values: [user_id]});
+            const rows = await queryOptions.pgQuery({ text: queryStr, values: [user_id]});
             return rows[0];
         } catch (error) {
             console.error(
@@ -23,9 +23,4 @@ const getUser = async (user_id) => {
         }
 }
 
-// module.exports = { getUser };
-getUser('1234')
-    .then(user => {
-        console.log(user)
-    })
-    .catch(err => console.log(err))
+module.exports = { getUser };
