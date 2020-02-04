@@ -20,9 +20,9 @@ const pgInitializer = async (opts) => {
             'idleTimeoutMillis' in options ||
             'connectionTimeoutMillis' in options))
     }
-    this.pgInit = async () => {
+    this.pgInit = async (secretName) => {
         if (!secrets || retry_failed) await this.renewalSecrets();
-        let pgCred = secrets.pgCred;
+        let pgCred = secrets[secretName];
         console.log(`renewal secret: ${JSON.stringify(pgCred)}`)
         pgPool = new Pool({
             user: process.env.username,
@@ -51,15 +51,13 @@ const pgInitializer = async (opts) => {
         })
     }
     return {
-        pgQuery: async (queryPg) => {
+        pgQuery: async (poolName, queryPg) => {
             let retry_count = 0, client;
             while(retry_count < 3) {
                 
                 try {
-                    if (!pgPool || retry_failed) await this.pgInit();
-                    if (!this.checkPoolOptions(pgPool.options)) {
-                        await this.pgInit();
-                    }
+                    if (!pgPool || retry_failed) await this.pgInit(poolName);
+                    if (!this.checkPoolOptions(pgPool.options)) await this.pgInit(poolName);
                     client = await pgPool.connect();
                     const { rows } = await pgPool.query(queryPg);
                     client.release();
@@ -67,7 +65,7 @@ const pgInitializer = async (opts) => {
                 } catch (error) {
                     retry_count++;
                     retry_failed = true;
-                    console.log(`retrying connection pooling ${retry_count} More Time${retry_count > 1 ? 's' : ''}! in ${JSON.stringify(pgPool.options)}`)
+                    // console.log(`retrying connection pooling ${retry_count} More Time${retry_count > 1 ? 's' : ''}! in ${JSON.stringify(pgPool.options)}`)
                     if (client) client.release();
                     if (error.code === POSTGRES_AUTH_CODE) {
                         let interval = Math.pow(2, retry_count) * 1000; //exponential backoff for every postgres sleep time connections

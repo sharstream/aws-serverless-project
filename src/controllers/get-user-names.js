@@ -4,7 +4,7 @@ const config = require('../lib/db/config.json');
 const opts = {
     awsSdkOptions: config,
     cacheExpiryInMillis: Date.now() + (0.1 * 60000),
-    secrets: ['pgCred', 'gisdb_ma']//these secrets are arbitrary for now
+    secrets: ['pgCred', 'gisdb_ma', 'x_api_key']//these secrets are arbitrary for now
 }
 
 const getUser = async (user_id) => {
@@ -12,7 +12,7 @@ const getUser = async (user_id) => {
 
         try {
             const queryOptions = await pgPool.pgInitializer(opts);
-            const rows = await queryOptions.pgQuery({ text: queryStr, values: [user_id]});
+            const rows = await queryOptions.pgQuery('pgCred', { text: queryStr, values: [user_id]});
             return rows[0];
         } catch (error) {
             console.error(

@@ -36,24 +36,38 @@ module.exports.createSecret = async (secretsManagerInstance, param) => {
 module.exports.getSecretsValues = async (secretsManagerInstance, secrets) => {
     let secretsPromises = Object.keys(secrets).map(async key => {
         let secretName = secrets[key];
-        let secretKey;
+        let secretKey, secretProperty = {};
         try {
-            secretKey = await secretsManagerInstance.getSecretValue({ SecretId: secretName }).promise();
+            secretKey = await secretsManagerInstance.getSecretValue({ SecretId: 'pgCred' }).promise();
+            let secret = {};
+            if (!IsJsonString(secretKey.SecretString)) {
+                secret[secretName] = secretKey.SecretString;
+                secretProperty = Object.assign({}, secret);
+            } else {
+                let secret = JSON.parse(secretKey.SecretString || '{}');
+                secretProperty[secretName] = secret;
+                secretProperty[secretName].isExpired = false;
+            }
+
         } catch (error) {
             // console.log('Something went wrong with HTTP Secret Manager request', error);
             throw Error('Something went wrong with HTTP Secret Manager request');
         }
 
-        let secret = JSON.parse(secretKey.SecretString || '{}');
-
-        let secretProperty = {};
-        secretProperty[secretName] = secret;
-        secretProperty[secretName].isExpired = false;
-
+        console.log(secretProperty)
         return secretProperty;
     });
 
     return Promise.all(secretsPromises);
+}
+
+const IsJsonString = (str) => {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
 }
 
 /**
